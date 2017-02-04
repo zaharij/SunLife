@@ -41,6 +41,6 @@ public class SplashScreenActivity extends AppCompatActivity {
         ActivitySquad.changeImageTimerStart(SplashScreenActivity.this, imageSwitcher, CHANGE_IMAGE_TIME);
 
         ActivitySquad.goFromCurrentActivityToNewActivity(SplashScreenActivity.this
-                , MainActivity.class, SPLASH_SCREEN_TIME_OUT);
+                , VideoActivity.class, SPLASH_SCREEN_TIME_OUT);
     }
 }
