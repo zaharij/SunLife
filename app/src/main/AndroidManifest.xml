@@ -22,5 +22,5 @@
             android:screenOrientation="portrait" />
         <activity android:name=".activities.VideoActivity"></activity>
     </application>
-
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 </manifest>

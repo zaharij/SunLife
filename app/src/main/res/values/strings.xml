@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">SunLife</string>
     <string name="app_version_message">SunLife Project, version 1.0</string>
+    <string name="ffmpeg_cmd_hint">Enter command here. To run \"ffmpeg -version\" enter \"-version\"</string>
+    <string name="device_not_supported">Device not supported</string>
+    <string name="device_not_supported_message">FFmpeg is not supported on your device</string>
+    <string name="run">Run</string>
+    <string name="empty_command_toast">You cannot execute empty command</string>
 </resources>
