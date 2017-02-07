@@ -1,6 +1,7 @@
 package life.centaurs.sunlife.video;
 
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.util.Log;
 
@@ -17,11 +18,17 @@ import static android.content.ContentValues.TAG;
  * The purpose of this class is video editing
  */
 public class VideoEditor {
-    FFmpeg ffmpeg;
+    private FFmpeg ffmpeg;
+    private ProgressDialog progressDialog;
 
     public VideoEditor (Context context){
         this.ffmpeg = FFmpeg.getInstance(context);
+        this.progressDialog = new ProgressDialog(context);
+        this.progressDialog.setTitle(null);
+        loadFFmpegBinary();
+    }
 
+    private void loadFFmpegBinary() {
         try {
             ffmpeg.loadBinary(new LoadBinaryResponseHandler() {
 
@@ -42,49 +49,37 @@ public class VideoEditor {
         }
     }
 
-    private void execFFmpegBinary(final String[] command) {
+    public void execFFmpegBinary(final String[] command) {
         try {
             ffmpeg.execute(command, new ExecuteBinaryResponseHandler() {
                 @Override
                 public void onFailure(String s) {
-                    addTextViewToLayout("FAILED with output : "+s);
                 }
 
                 @Override
                 public void onSuccess(String s) {
-                    addTextViewToLayout("SUCCESS with output : "+s);
                 }
 
                 @Override
                 public void onProgress(String s) {
                     Log.d(TAG, "Started command : ffmpeg "+command);
-                    addTextViewToLayout("progress : "+s);
-                    //progressDialog.setMessage("Processing\n"+s);
+                    progressDialog.setMessage("Processing\n"+s);
                 }
 
                 @Override
                 public void onStart() {
-                    //outputLayout.removeAllViews();
-
                     Log.d(TAG, "Started command : ffmpeg " + command);
-                    //progressDialog.setMessage("Processing...");
-                    //progressDialog.show();
+                    progressDialog.setMessage("Processing...");
+                    progressDialog.show();
                 }
 
                 @Override
                 public void onFinish() {
                     Log.d(TAG, "Finished command : ffmpeg "+command);
-                    //progressDialog.dismiss();
+                    progressDialog.dismiss();
                 }
             });
         } catch (FFmpegCommandAlreadyRunningException e) {
-            // do nothing for now
         }
-    }
-
-    private void addTextViewToLayout(String text) {
-        //TextView textView = new TextView(Home.this);
-        //textView.setText(text);
-        //outputLayout.addView(textView);
     }
 }
