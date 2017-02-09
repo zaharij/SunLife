@@ -1,11 +1,17 @@
 package life.centaurs.sunlife.activities;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.Size;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.annotation.NonNull;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
 import android.view.Surface;
@@ -15,15 +21,24 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import life.centaurs.sunlife.R;
 import life.centaurs.sunlife.squad.ActivitySquad;
+import life.centaurs.sunlife.video.enums.MediaEnum;
 
 import static life.centaurs.sunlife.constants.ActivitiesConstants.SPLASH_SCREEN_BACKGROUND_COLOR;
+import static life.centaurs.sunlife.video.enums.MediaEnum.VIDEO;
 
 public class OldAndroidVideoActivity extends AppCompatActivity implements View.OnClickListener{
+    private static final int REQUEST_CAMERA_PERMISSION_RESULT  = 0;
+    private static final int REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT  = 1;
+
     private ImageButton imageButtonVideo, imageButtonPhoto, imageButtonRotateCamera, imageButtonFullScreen;
     SurfaceView sv;
     SurfaceHolder holder;
@@ -33,6 +48,9 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
     private static int cameraId = 0;
     private static boolean fullScreen = false;
     private static boolean isRecording = false;
+
+    private File mVideoFolder;
+    private String mVideoFileName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +62,8 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
 
         View viewBackground = this.getWindow().getDecorView();
         viewBackground.setBackgroundColor(SPLASH_SCREEN_BACKGROUND_COLOR);
+
+        createVideoFolder();
 
         sv = (SurfaceView) findViewById(R.id.surfaceView);
         holder = sv.getHolder();
@@ -77,8 +97,7 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
                     isRecording = false;
                     imageButtonVideo.setImageResource(R.mipmap.btn_video_online_65);
                 } else {
-                    isRecording = true;
-                    imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
+                    checkWriteStoragePermission();
                 }
                 break;
             case R.id.imageButtonRotateCamera:
@@ -87,6 +106,8 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
                 } else {
                     cameraId = 0;
                 }
+                onPause();
+                onStart();
                 ActivitySquad.goFromCurrentActivityToNewActivity(OldAndroidVideoActivity.this
                         , OldAndroidVideoActivity.class);
                 break;
@@ -133,8 +154,7 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
         }
 
         @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                                   int height) {
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             camera.stopPreview();
             setCameraDisplayOrientation(cameraId);
             try {
@@ -149,7 +169,6 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
         public void surfaceDestroyed(SurfaceHolder holder) {
 
         }
-
     }
 
     void setPreviewSize(boolean fullScreen) {
@@ -232,5 +251,86 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
             }
         result = result % 360;
         camera.setDisplayOrientation(result);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CAMERA_PERMISSION_RESULT){
+            if (grantResults[0] != PackageManager.PERMISSION_GRANTED){
+                Toast.makeText(getApplicationContext(), "app will not run without camera services", Toast.LENGTH_SHORT).show();
+            }
+        }
+        if (requestCode == REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT){
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                isRecording = true;
+                imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
+                try {
+                    createVideoFilename(MediaEnum.VIDEO);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Toast.makeText(getApplicationContext(), "permission successfully granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(getApplicationContext(), "app needs to save video to run", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    // ***********file preparing**************
+
+    private void createVideoFolder(){
+        File movieFile = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+        mVideoFolder = new File(movieFile, "cameraVideoImage");
+        if (!mVideoFolder.exists()){
+            mVideoFolder.mkdirs();
+        }
+    }
+
+    private File createVideoFilename(MediaEnum mediaEnum) throws IOException{
+        String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String fileExpansion = null;
+        String prependPref = null;
+        switch (mediaEnum){
+            case VIDEO:
+                prependPref = VIDEO.toString();
+                fileExpansion = ".mp4";
+                break;
+            case PHOTO:
+                prependPref = MediaEnum.PHOTO.toString();
+                fileExpansion = ".jpg";
+                break;
+        }
+        String prepend = prependPref.concat("_").concat(timestamp).concat("_");;
+        File mediaFile = File.createTempFile(prepend, fileExpansion, mVideoFolder);
+        return mediaFile;
+    }
+
+    private void checkWriteStoragePermission(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED){
+                isRecording = true;
+                imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
+                try {
+                    createVideoFilename(MediaEnum.VIDEO);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                if (shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+                    Toast.makeText(this, "app need to be able to save videos", Toast.LENGTH_SHORT).show();
+                }
+                requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_EXTERNAL_STORAGE_PERMISSION_RESULT);
+            }
+        } else {
+            isRecording = true;
+            imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
+            try {
+                createVideoFilename(MediaEnum.VIDEO);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
