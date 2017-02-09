@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_video"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="life.centaurs.sunlife.activities.NewAndroidVideoActivity"
+    android:backgroundTint="@android:color/transparent">
+
+
+    <TextureView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/textureView" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/btn_video_busy"
+        android:background="@null"
+        android:layout_marginStart="109dp"
+        android:id="@+id/imageButtonVideoBusu"
+        android:contentDescription="@string/video_button"
+        android:backgroundTint="@android:color/transparent"
+        android:onClick="onClick"
+        android:layout_alignTop="@+id/imageButtonPhoto"
+        android:layout_alignParentStart="true" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@mipmap/btn_video_online"
+        android:layout_alignTop="@+id/imageButtonVideoBusu"
+        android:layout_alignStart="@+id/imageButtonVideoBusu"
+        android:background="@null"
+        android:id="@+id/imageButtonVideoOnline"
+        android:contentDescription="@string/camera_button"
+        android:backgroundTint="@android:color/transparent"
+        android:onClick="onClick"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/btn_photo"
+        android:layout_marginStart="41dp"
+        android:id="@+id/imageButtonPhoto"
+        android:contentDescription="@string/photo_button"
+        android:backgroundTint="@android:color/transparent"
+        android:background="@null"
+        android:onClick="onClick"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/imageButtonVideoBusu"
+        android:layout_marginBottom="20dp" />
+
+</RelativeLayout>

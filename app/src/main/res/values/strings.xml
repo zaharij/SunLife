@@ -6,4 +6,7 @@
     <string name="device_not_supported_message">FFmpeg is not supported on your device</string>
     <string name="run">Run</string>
     <string name="empty_command_toast">You cannot execute empty command</string>
+    <string name="video_button">Video Record Button</string>
+    <string name="camera_button">Camera Capture Button</string>
+    <string name="photo_button">Photo Capture Button</string>
 </resources>

@@ -41,6 +41,20 @@ public class SplashScreenActivity extends AppCompatActivity {
         ActivitySquad.changeImageTimerStart(SplashScreenActivity.this, imageSwitcher, CHANGE_IMAGE_TIME);
 
         ActivitySquad.goFromCurrentActivityToNewActivity(SplashScreenActivity.this
-                , VideoActivity.class, SPLASH_SCREEN_TIME_OUT);
+                , OldAndroidVideoActivity.class, SPLASH_SCREEN_TIME_OUT);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        View decorView = getWindow().getDecorView();
+        if(hasFocus){
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        }
     }
 }
