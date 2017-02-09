@@ -3,6 +3,8 @@ package life.centaurs.sunlife.activities;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Size;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Display;
@@ -22,21 +24,19 @@ import life.centaurs.sunlife.squad.ActivitySquad;
 import static life.centaurs.sunlife.constants.ActivitiesConstants.SPLASH_SCREEN_BACKGROUND_COLOR;
 
 public class OldAndroidVideoActivity extends AppCompatActivity implements View.OnClickListener{
-
-    private ImageButton imageButtonVideoOnline, imageButtonVideoBusy, imageButtonPhoto
-            , imageButtonRotateCamera, imageButtonFullScreenOn, imageButtonFullScreenOff;
+    private ImageButton imageButtonVideo, imageButtonPhoto, imageButtonRotateCamera, imageButtonFullScreen;
     SurfaceView sv;
     SurfaceHolder holder;
     HolderCallback holderCallback;
     Camera camera;
 
-    private static int CAMERA_ID = 0;
-    private static boolean FULL_SCREEN = false;
+    private static int cameraId = 0;
+    private static boolean fullScreen = false;
+    private static boolean isRecording = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -52,55 +52,53 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
         holderCallback = new HolderCallback();
         holder.addCallback(holderCallback);
 
-        imageButtonFullScreenOn = (ImageButton) findViewById(R.id.imageButtonFullScreenOn);
-        imageButtonFullScreenOff = (ImageButton) findViewById(R.id.imageButtonFullScreenOff);
-        imageButtonRotateCamera = (ImageButton) findViewById(R.id.imageButtonRotateCamera);
-        imageButtonVideoOnline = (ImageButton) findViewById(R.id.imageButtonVideoOnline);
-        imageButtonVideoBusy = (ImageButton) findViewById(R.id.imageButtonVideoBusu);
+        imageButtonVideo = (ImageButton) findViewById(R.id.imageButtonVideo);
         imageButtonPhoto = (ImageButton) findViewById(R.id.imageButtonPhoto);
-        imageButtonVideoBusy.setVisibility(View.INVISIBLE);
-        if (FULL_SCREEN){
-            imageButtonFullScreenOn.setVisibility(View.INVISIBLE);
-            imageButtonFullScreenOff.setVisibility(View.VISIBLE);
+        imageButtonRotateCamera = (ImageButton) findViewById(R.id.imageButtonRotateCamera);
+        imageButtonFullScreen = (ImageButton) findViewById(R.id.imageButtonFullScreen);
+
+        if (isRecording){
+            imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
         } else {
-            imageButtonFullScreenOff.setVisibility(View.INVISIBLE);
-            imageButtonFullScreenOn.setVisibility(View.VISIBLE);
+            imageButtonVideo.setImageResource(R.mipmap.btn_video_online_65);
+        }
+        if (fullScreen){
+            imageButtonFullScreen.setImageResource(R.mipmap.btn_full_screen_off);
+        } else {
+            imageButtonFullScreen.setImageResource(R.mipmap.btn_full_screen_on);
         }
     }
 
     @Override
     public void onClick(View view) {
         switch(view.getId()){
-            case R.id.imageButtonVideoOnline:
-                imageButtonVideoOnline.setVisibility(View.INVISIBLE);
-                imageButtonVideoBusy.setVisibility(View.VISIBLE);
-                break;
-            case R.id.imageButtonVideoBusu:
-                imageButtonVideoBusy.setVisibility(View.INVISIBLE);
-                imageButtonVideoOnline.setVisibility(View.VISIBLE);
-                break;
-            case R.id.imageButtonPhoto:
+            case R.id.imageButtonVideo:
+                if (isRecording){
+                    isRecording = false;
+                    imageButtonVideo.setImageResource(R.mipmap.btn_video_online_65);
+                } else {
+                    isRecording = true;
+                    imageButtonVideo.setImageResource(R.mipmap.btn_video_busy_65);
+                }
                 break;
             case R.id.imageButtonRotateCamera:
-                if(CAMERA_ID == 0){
-                    CAMERA_ID = 1;
+                if (cameraId == 0){
+                    cameraId = 1;
                 } else {
-                    CAMERA_ID = 0;
+                    cameraId = 0;
                 }
                 ActivitySquad.goFromCurrentActivityToNewActivity(OldAndroidVideoActivity.this
                         , OldAndroidVideoActivity.class);
                 break;
-            case R.id.imageButtonFullScreenOn:
-                imageButtonFullScreenOff.setVisibility(View.INVISIBLE);
-                imageButtonFullScreenOn.setVisibility(View.VISIBLE);
-                FULL_SCREEN = true;
-                ActivitySquad.goFromCurrentActivityToNewActivity(OldAndroidVideoActivity.this
-                        , OldAndroidVideoActivity.class);
+            case R.id.imageButtonPhoto:
+
                 break;
-            case R.id.imageButtonFullScreenOff:
-                imageButtonFullScreenOn.setVisibility(View.INVISIBLE);
-                imageButtonFullScreenOff.setVisibility(View.VISIBLE);
-                FULL_SCREEN = false;
+            case R.id.imageButtonFullScreen:
+                if (fullScreen){
+                    fullScreen = false;
+                } else {
+                    fullScreen = true;
+                }
                 ActivitySquad.goFromCurrentActivityToNewActivity(OldAndroidVideoActivity.this
                         , OldAndroidVideoActivity.class);
                 break;
@@ -110,8 +108,8 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
     @Override
     protected void onResume() {
         super.onResume();
-        camera = Camera.open(CAMERA_ID);
-        setPreviewSize(FULL_SCREEN);
+        camera = Camera.open(cameraId);
+        setPreviewSize(fullScreen);
     }
 
     @Override
@@ -138,7 +136,7 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
         public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                    int height) {
             camera.stopPreview();
-            setCameraDisplayOrientation(CAMERA_ID);
+            setCameraDisplayOrientation(cameraId);
             try {
                 camera.setPreviewDisplay(holder);
                 camera.startPreview();
@@ -156,38 +154,50 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
 
     void setPreviewSize(boolean fullScreen) {
 
+        // получаем размеры экрана
         Display display = getWindowManager().getDefaultDisplay();
         boolean widthIsMax = display.getWidth() > display.getHeight();
 
-        Camera.Size size = camera.getParameters().getPreviewSize();
+        // определяем размеры превью камеры
+        Size size = camera.getParameters().getPreviewSize();
 
         RectF rectDisplay = new RectF();
         RectF rectPreview = new RectF();
 
+        // RectF экрана, соотвествует размерам экрана
         rectDisplay.set(0, 0, display.getWidth(), display.getHeight());
 
+        // RectF первью
         if (widthIsMax) {
+            // превью в горизонтальной ориентации
             rectPreview.set(0, 0, size.width, size.height);
         } else {
+            // превью в вертикальной ориентации
             rectPreview.set(0, 0, size.height, size.width);
         }
 
         Matrix matrix = new Matrix();
+        // подготовка матрицы преобразования
         if (!fullScreen) {
+            // если превью будет "втиснут" в экран (второй вариант из урока)
             matrix.setRectToRect(rectPreview, rectDisplay,
                     Matrix.ScaleToFit.START);
         } else {
+            // если экран будет "втиснут" в превью (третий вариант из урока)
             matrix.setRectToRect(rectDisplay, rectPreview,
                     Matrix.ScaleToFit.START);
             matrix.invert(matrix);
         }
+        // преобразование
         matrix.mapRect(rectPreview);
 
+        // установка размеров surface из получившегося преобразования
         sv.getLayoutParams().height = (int) (rectPreview.bottom);
         sv.getLayoutParams().width = (int) (rectPreview.right);
     }
 
     void setCameraDisplayOrientation(int cameraId) {
+        // определяем насколько повернут экран от нормального положения
         int rotation = getWindowManager().getDefaultDisplay().getRotation();
         int degrees = 0;
         switch (rotation) {
@@ -207,13 +217,16 @@ public class OldAndroidVideoActivity extends AppCompatActivity implements View.O
 
         int result = 0;
 
-        Camera.CameraInfo info = new Camera.CameraInfo();
+        // получаем инфо по камере cameraId
+        CameraInfo info = new CameraInfo();
         Camera.getCameraInfo(cameraId, info);
 
-        if (info.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+        // задняя камера
+        if (info.facing == CameraInfo.CAMERA_FACING_BACK) {
             result = ((360 - degrees) + info.orientation);
         } else
-            if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            // передняя камера
+            if (info.facing == CameraInfo.CAMERA_FACING_FRONT) {
                 result = ((360 - degrees) - info.orientation);
                 result += 360;
             }
